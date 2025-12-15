@@ -152,6 +152,21 @@ Update 2025-02-28: Конфиг, схема данных, отчет, UX
   - Вход: daySummary {date, total_work_seconds, active_quanta, inactive_quanta, avg_activity_percent, top_apps/categories, switching_stats, anomalies, focus_streaks} без скриншотов.
   - Выход: AIInsights {summary, strengths, risks, recommendations, anomalies_highlighted}; логирование входного payload и мок-ответа.
 
+Update 2025-02-28: MVP-бэклог и порядок работ (Mac)
+
+1) Foundations: загрузка конфига (JSON/YAML), базовый UI-шелл, система логирования, аудит, структура БД/миграции.
+2) Permissions & onboarding: проверки Screen Recording/Accessibility/Input Monitoring, онбординг-экран, хендлинг отказов, установка LaunchAgent.
+3) State machine & quantizer: статусы `stopped/tracking/paused_by_system`, планирование 180s квантов, partial-логика (drop/too_short), авто-пауза при sleep/display off, возобновление с попапом.
+4) Activity aggregation: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
+5) App focus & switching: capture frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
+6) Screenshots: захват всех дисплеев, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС с метаданными, привязка к quantums.
+7) Storage wiring: запись Session/Quantum/ActivityAggregate/FocusAggregate/ScreenshotMetadata/AuditLog; индексы; очистка по политике хранения (неделя, пока нет синка).
+8) Reporting: генерация HTML-отчета (конец дня + по запросу) с метриками/графиками/таймлайном скринов/аномалиями.
+9) AI mock: `AIReportAnalyzer.analyze(daySummary)` — логирование payload, мок-ответ, интеграция в отчет.
+10) UX polish: главный экран (Start/Stop, проект/задача), Today view, Report preview, Settings (конфиг-параметры, privacy, retention).
+11) Sync stub readiness: очередь SyncQueue, упаковка payload кванта (без реальной отправки), удержание скринов/логов до гипотетического подтверждения.
+12) Packaging & QA: подпись/нотаризация, автозапуск helper-а, sanity-тесты квантов, отчетов, хранения/очистки.
+
 ## Открытые вопросы
 - ~~Какое минимальное разрешение/качество скриншота гарантирует читаемость мелкого текста при разумном объеме хранилища?~~ Resolved 2025-02-28: дефолт — даунскейл до 1280px по ширине, формат JPEG/HEIC; хранить до подтвержденного синка с сервером, пока его нет — 7 дней.
 - ~~Какие браузеры, IDE и офисные пакеты включить в зону покрытия для вкладок/документов/проектов на старт?~~ Resolved 2025-02-28: учитывать основные браузеры (включая новые, Comet и др.), основные IDE и офисные пакеты; не фиксировать вкладки/документы/проекты, только приложения.
