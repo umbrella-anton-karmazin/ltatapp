@@ -1,0 +1,94 @@
+{
+  "quantum": {
+    "quantumSeconds": 180,
+    "minPartialSecondsDrop": 30,
+    "minPartialSecondsTooShort": 120,
+    "allowResumeAfterSleep": true,
+    "autoPauseOnSleep": true
+  },
+  "activity": {
+    "kMax": 150,
+    "cMax": 90,
+    "sMax": 120,
+    "mMax": 5000,
+    "weights": {
+      "keypress": 0.4,
+      "click": 0.25,
+      "scroll": 0.2,
+      "mouseDistance": 0.15
+    },
+    "lowActivityThreshold": 20,
+    "inactiveWhenNoEvents": true
+  },
+  "screenshots": {
+    "downscaleWidth": 1280,
+    "format": "jpeg",
+    "quality": 0.75,
+    "storagePolicy": {
+      "keepUntilSync": true,
+      "fallbackDays": 7
+    },
+    "captureAllDisplays": true
+  },
+  "categories": {
+    "com.apple.Safari": "Browser",
+    "com.google.Chrome": "Browser",
+    "org.mozilla.firefox": "Browser",
+    "com.microsoft.edgemac": "Browser",
+    "com.brave.Browser": "Browser",
+    "com.operasoftware.Opera": "Browser",
+    "company.thebrowser.Browser": "Browser",
+    "com.vivaldi.Vivaldi": "Browser",
+    "com.apple.dt.Xcode": "IDE",
+    "com.microsoft.VSCode": "IDE",
+    "com.jetbrains.intellij": "IDE",
+    "com.jetbrains.pycharm": "IDE",
+    "com.jetbrains.clion": "IDE",
+    "com.jetbrains.rider": "IDE",
+    "com.jetbrains.goland": "IDE",
+    "com.jetbrains.WebStorm": "IDE",
+    "com.jetbrains.datagrip": "IDE",
+    "com.jetbrains.rubymine": "IDE",
+    "com.jetbrains.phpstorm": "IDE",
+    "com.google.android.studio": "IDE",
+    "com.microsoft.Word": "Office",
+    "com.microsoft.Excel": "Office",
+    "com.microsoft.Powerpoint": "Office",
+    "com.apple.iWork.Pages": "Office",
+    "com.apple.iWork.Numbers": "Office",
+    "com.apple.iWork.Keynote": "Office",
+    "com.tinyspeck.slackmacgap": "Messengers",
+    "com.hnc.Discord": "Messengers",
+    "com.apple.iChat": "Messengers",
+    "com.microsoft.teams": "Messengers",
+    "com.telegram.desktop": "Messengers",
+    "com.apple.Terminal": "Terminal",
+    "com.googlecode.iterm2": "Terminal",
+    "com.adobe.Photoshop": "Design",
+    "com.adobe.Illustrator": "Design",
+    "com.bohemiancoding.sketch3": "Design",
+    "com.figma.Desktop": "Design",
+    "com.adobe.AfterEffects": "Media",
+    "com.adobe.PremierePro": "Media"
+  },
+  "anomalies": {
+    "switchingPerQuantum": 8,
+    "switchingPerHour": 60,
+    "focusModeMinConsecutiveQuanta": 2
+  },
+  "rawEvents": {
+    "enableRawEvents": false,
+    "rawStoragePath": "RawEvents"
+  },
+  "logging": {
+    "logLevel": "info",
+    "logFilePath": "Logs/ltatapp.log"
+  },
+  "reporting": {
+    "reportOutputPath": "Reports",
+    "reportAutoEndOfDay": true
+  },
+  "aiAnalysis": {
+    "enabled": true
+  }
+}

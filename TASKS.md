@@ -15,7 +15,7 @@ Created 2025-02-28.
 - [x] Проработать UX-флоу MVP: онбординг/permissions, главный экран (статус, проект/задача, Start/Stop), Today view, превью отчета, настройки; учесть авто-паузу/возврат (2025-02-28) — описано в PLAN.md.
 - [x] Предложить дефолтные пороги/веса для активности и минимальную длительность partial-кванта (drop vs `too_short`) (2025-02-28) — K_MAX=150, C_MAX=90, S_MAX=120, M_MAX=5000px, веса 0.4/0.25/0.2/0.15, low activity <20%; partial: <30s drop, 30–120s `too_short`, ≥120s normal partial.
 - [x] Составить базовый список bundleId → category для популярных браузеров, IDE, офисных пакетов, мессенджеров и т.д. (2025-02-28) — зафиксировано в PLAN.md (Update 2025-02-28).
-- [ ] Реализовать загрузку конфига (JSON/YAML), базовый UI-шелл, логирование/аудит, структуру БД/миграции.
+- [~] Реализовать загрузку конфига (JSON/YAML), базовый UI-шелл, логирование/аудит, структуру БД/миграции — scaffolding добавлен (SwiftPM app, ConfigLoader, logger, schema, SwiftUI shell); требуется сборка/проверка.
 - [ ] Реализовать permissions/onboarding (Screen Recording, Accessibility, Input Monitoring), обработку отказов и установку LaunchAgent.
 - [ ] Реализовать state machine и квантайзер: статусы stopped/tracking/paused_by_system, partial-логика (drop/too_short), авто-пауза при sleep/display off, попап возобновления.
 - [ ] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
