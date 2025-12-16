@@ -57,12 +57,24 @@ Created 2025-02-28.
   - [x] Определить флаги: `focus_mode_flag` (streak) и `anomaly_switching_flag` (пороги `switchingPerQuantum`/`switchingPerHour`) (2025-12-16) — computed in `finalizeQuantum`.
   - [x] Интегрировать в lifecycle квантов: start/reset/finalize + логирование агрегатов (2025-12-16) — wiring in `mac-app/Sources/LTATApp/AppState.swift`.
   - [x] Smoke: добавить `--smoke-focus` (или минимальный UI-debug) для проверки на живой системе (2025-12-16) — `--smoke-focus` via `mac-app/Sources/LTATApp/FocusSmokeRunner.swift` + UI card in `mac-app/Sources/LTATApp/ContentView.swift`.
-- [ ] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные.
+- [x] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные. — completed 2025-12-16: `ScreenshotService` + async wiring + smoke runner.
+  - Note 2025-12-16: сохранять по одному файлу на дисплей (не композит); базовая директория хранения — Application Support.
+  - [x] Специфицировать layout хранения в Application Support (папки/нейминг: day/session/quantum + displayId + ts + ext) (2025-12-16) — completed 2025-12-16: `.../Application Support/<App>/Screenshots/YYYY-MM-DD/quantum-<start>-<end>/display-<id>.<ext>`.
+  - [x] Определить правило выбора `primary_screenshot_id` (например: main display; fallback: первый доступный дисплей) (2025-12-16) — completed 2025-12-16: main display first, else first captured.
+  - [x] Список дисплеев: enumerate active displays и уважать `captureAllDisplays` (2025-12-16) — completed 2025-12-16: `CGGetActiveDisplayList` / `CGMainDisplayID`.
+  - [x] Захват: получить `CGImage` по каждому дисплею (с корректной обработкой отсутствия Screen Recording permission/черного кадра) (2025-12-16) — completed 2025-12-16: `CGDisplayCreateImage` + error aggregation.
+  - [x] Даунскейл: привести каждый кадр к `downscaleWidth` с сохранением aspect ratio (2025-12-16) — completed 2025-12-16: CGContext resize (RGB, high interpolation).
+  - [x] Кодирование: сохранить в `jpeg|heic` с `quality` через ImageIO (2025-12-16) — completed 2025-12-16: `CGImageDestination` + `kCGImageDestinationLossyCompressionQuality`.
+  - [x] Метаданные: width/height/format/file_size/hash/captured_at + связь с `quantum_id` и (если нужно) `display_id` (2025-12-16) — completed 2025-12-16: `CapturedScreenshot{displayId,width,height,format,fileSize,sha256,capturedAt}`.
+  - [x] Интеграция в lifecycle кванта: когда делаем capture (конец кванта/финализация/асинхронно) и что делаем при ошибке (2025-12-16) — completed 2025-12-16: async capture на `finalizeQuantum` (skip `too_short`/dropped), ошибки в лог + `lastScreenshotCapture`.
+  - [x] Smoke: минимальная проверка “файлы реально пишутся по дисплеям и читаемы” (2025-12-16) — completed 2025-12-16: `--smoke-screenshots`.
 - [ ] Привязать хранилище: запись Session/Quantum/ActivityAggregate/FocusAggregate/ScreenshotMetadata/AuditLog, индексы, очистка по политике хранения (неделя пока без синка).
+  - Note 2025-12-16: multi-display скриншоты = несколько `ScreenshotMetadata` на один `quantum_id`; в `Quantum` хранится `primary_screenshot_id` для превью/быстрого поиска.
 - [ ] Генерировать HTML-отчет (конец дня + по запросу) с метриками/графиками/таймлайном скринов/аномалиями.
 - [ ] Интегрировать AI mock `AIReportAnalyzer` в отчет (логирование payload, мок-ответ).
 - [ ] Полировать UX: главный экран Start/Stop + проект/задача, Today view, Report preview, Settings (конфиг/приватность/retention).
   - [ ] UI: добавить таймер текущего кванта, суммарное затреканное время и сводку (2025-12-16).
+  - [ ] UI: показывать превью `primary_screenshot` (последний квант; кликабельно открыть файл/папку) (2025-12-16).
   - [x] UI: починить детект разрешений в онбординге (Screen Recording / Input Monitoring) (2025-12-16) — `CGPreflightScreenCaptureAccess` дополнен fallback через `CGDisplayCreateImage`, Input Monitoring проверяется через `IOHIDCheckAccess` (с fallback на event tap).
 - [ ] Реализовать sync stub: очередь SyncQueue, упаковка payload кванта (без отправки), удержание скринов/логов до подтверждения.
 - [ ] Packaging/QA: подпись/нотаризация, автозапуск helper-а, sanity-тесты квантов, отчетов, хранения/очистки.

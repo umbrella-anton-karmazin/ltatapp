@@ -31,6 +31,11 @@ enum LTATMain {
             return
         }
 
+        if args.contains("--smoke-screenshots") {
+            ScreenshotSmokeRunner.main()
+            return
+        }
+
         LTATApp.main()
     }
 }

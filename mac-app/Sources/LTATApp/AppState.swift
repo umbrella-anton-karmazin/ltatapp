@@ -47,6 +47,8 @@ final class AppViewModel: ObservableObject {
     @Published var frontmostAppCategory: String?
     @Published var frontmostAppBundleId: String?
     @Published var lastFocus: FocusQuantumAggregate?
+    @Published var lastScreenshotCapture: ScreenshotCaptureResult?
+    @Published var screenshotCaptureInFlight: Bool = false
 
     private let logger: AppLogger
     private let systemEvents = SystemEventMonitor()
@@ -222,6 +224,43 @@ final class AppViewModel: ObservableObject {
 
         if !isDropped {
             lastQuantum = summary
+        }
+
+        let shouldCaptureScreenshots = !isDropped && !isTooShort
+        if shouldCaptureScreenshots {
+            screenshotCaptureInFlight = true
+            let captureConfig = config.screenshots
+            let captureStart = start
+            let captureEnd = end
+            let logger = logger
+
+            DispatchQueue.global(qos: .utility).async {
+                let result = ScreenshotService.captureAndSave(
+                    quantumStartedAt: captureStart,
+                    quantumEndedAt: captureEnd,
+                    config: captureConfig,
+                    logger: logger
+                )
+
+                logger.log(
+                    level: result.screenshots.isEmpty ? .warning : .info,
+                    component: "screenshots",
+                    message: result.screenshots.isEmpty ? "Screenshot capture produced no files" : "Screenshots captured",
+                    metadata: [
+                        "count": String(result.screenshots.count),
+                        "primary_screenshot_id": result.primaryScreenshotId ?? "",
+                        "dir": result.baseDirectory.path
+                    ]
+                )
+
+                Task { @MainActor in
+                    self.screenshotCaptureInFlight = false
+                    self.lastScreenshotCapture = result
+                }
+            }
+        } else {
+            lastScreenshotCapture = nil
+            screenshotCaptureInFlight = false
         }
 
         logger.log(

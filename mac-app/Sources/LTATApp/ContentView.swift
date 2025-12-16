@@ -22,6 +22,7 @@ struct ContentView: View {
             statusControls
             activitySummary
             focusSummary
+            screenshotSummary
             configSummary
             launchAgentControls
             Spacer()
@@ -164,6 +165,33 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             } else {
                 Text("Last quantum: —")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))
+    }
+
+    private var screenshotSummary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Скриншоты")
+                .font(.subheadline.weight(.semibold))
+
+            if viewModel.screenshotCaptureInFlight {
+                Text("Capturing…")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let result = viewModel.lastScreenshotCapture {
+                Text("Files: \(result.screenshots.count) • errors: \(result.errors.count)")
+                    .foregroundStyle(.secondary)
+
+                if let first = result.screenshots.first {
+                    Text("Latest: \(first.fileURL.lastPathComponent)")
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Text("—")
                     .foregroundStyle(.secondary)
             }
         }
