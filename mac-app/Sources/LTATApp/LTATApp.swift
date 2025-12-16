@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct LTATApp: App {
     @StateObject private var viewModel: AppViewModel
 

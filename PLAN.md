@@ -118,6 +118,13 @@ Update 2025-02-28: Конфиг, схема данных, отчет, UX
 - Конфигурация (JSON/YAML, подгружается без пересборки):
   - app/quantum: `quantum_seconds` (180 по умолчанию), `min_partial_seconds_drop` (30), `min_partial_seconds_too_short` (120), `allow_resume_after_sleep` (true), `auto_pause_on_sleep` (true).
   - activity: `K_MAX`, `C_MAX`, `S_MAX`, `M_MAX`, `weights` (k/c/s/m), `low_activity_threshold` (20), `inactive_when_no_events` (true).
+
+Update 2025-12-16: Запуск в production и автостарт helper-а
+
+- MVP-реализация (см. DECISIONS.md 2025-12-16): один бинарь приложения с режимом `--helper`, который стартует через LaunchAgent (plist в `~/Library/LaunchAgents`).
+- Ключевой production-риск LaunchAgent-подхода: в plist хранится абсолютный путь до исполняемого файла; при переносе `.app`/обновлении/смене пути plist может начать указывать на несуществующий бинарь.
+- Минимальная стратегия для продакшена без смены подхода: “self-heal” при каждом запуске UI — проверять, что plist указывает на текущий `.../LTATApp.app/Contents/MacOS/LTATApp`, и при расхождении переустанавливать/перезагружать LaunchAgent.
+- Альтернатива post-MVP: использовать `ServiceManagement` (`SMAppService` / Login Items) для более стабильного автостарта при перемещениях/обновлениях; при необходимости разнести UI и helper (вариант B) и/или добавить IPC.
   - screenshots: `downscale_width` (1280), `format` (jpeg|heic), `quality` (0–1), `storage_policy` (keep_until_sync: true, fallback_days: 7), `capture_all_displays` (true).
   - categories: список bundleId → category (Browser/IDE/Office/Messengers/Terminal/Design/Media/System); расширяемый.
   - anomalies: `switching_per_quantum_threshold`, `switching_per_hour_threshold`, `focus_mode_min_consecutive_quanta` (>=2).
@@ -179,3 +186,5 @@ Update 2025-02-28: MVP-бэклог и порядок работ (Mac)
 - ~~Какие bundleId → category маппинги включить «из коробки»? (Пользователь не предоставил — требуется предложить базовый список.)~~ Resolved 2025-02-28: см. базовый список категорий/BundleID в Update 2025-02-28 выше; обновлять конфиг по мере расширения (например, новые браузеры/Comet).
 - ~~Разрешать ли опцию сбора сырых событий уже в MVP (за флагом) или отложить?~~ Resolved 2025-02-28: сбор сырых событий отложен; флаг выключен.
 - ~~Использовать ли аудио/камеру для активности (речь/видео)?~~ Resolved 2025-02-28: не делаем, признано ненужным для MVP.
+- ~~Какой формат helper/LaunchAgent для MVP: отдельный helper-executable или режим `--helper` в основном бинаре?~~ Resolved 2025-12-16: для MVP — вариант A (один бинарь с режимом `--helper`); пост-MVP можно вернуться к отдельному helper-executable при необходимости разнести права/IPC.
+- Какой механизм автостарта выбрать для production-дистрибуции: оставить LaunchAgent с “self-heal” путей или перейти на `ServiceManagement` (`SMAppService` / Login Items)? (2025-12-16)

@@ -15,8 +15,22 @@ Created 2025-02-28.
 - [x] Проработать UX-флоу MVP: онбординг/permissions, главный экран (статус, проект/задача, Start/Stop), Today view, превью отчета, настройки; учесть авто-паузу/возврат (2025-02-28) — описано в PLAN.md.
 - [x] Предложить дефолтные пороги/веса для активности и минимальную длительность partial-кванта (drop vs `too_short`) (2025-02-28) — K_MAX=150, C_MAX=90, S_MAX=120, M_MAX=5000px, веса 0.4/0.25/0.2/0.15, low activity <20%; partial: <30s drop, 30–120s `too_short`, ≥120s normal partial.
 - [x] Составить базовый список bundleId → category для популярных браузеров, IDE, офисных пакетов, мессенджеров и т.д. (2025-02-28) — зафиксировано в PLAN.md (Update 2025-02-28).
-- [~] Реализовать загрузку конфига (JSON/YAML), базовый UI-шелл, логирование/аудит, структуру БД/миграции — scaffolding добавлен (SwiftPM app, ConfigLoader, logger, schema, SwiftUI shell); требуется сборка/проверка.
-- [ ] Реализовать permissions/onboarding (Screen Recording, Accessibility, Input Monitoring), обработку отказов и установку LaunchAgent.
+- [x] Реализовать загрузку конфига (JSON/YAML), базовый UI-шелл, логирование/аудит, структуру БД/миграции — scaffolding добавлен (SwiftPM app, ConfigLoader, logger, schema, SwiftUI shell); сборка проходит (2025-12-16).
+  - [x] Починить входную точку SwiftUI: конфликт `main.swift` и `@main` (2025-12-16) — переименован `mac-app/Sources/LTATApp/main.swift` → `mac-app/Sources/LTATApp/LTATApp.swift`, чтобы убрать special-case `main.swift`.
+  - [x] Починить `Codable` для `AuditEvent`/`LogLevel` (2025-12-16) — `LogLevel` теперь `Codable`, автосинтез `AuditEvent: Codable` снова работает.
+  - [x] Починить ошибки Swift 6 Concurrency для `AppLogger.shared` / `@Sendable` closure (2025-12-16) — добавлены `Sendable`/`@unchecked Sendable` и синхронизация состояния логгера через его очередь.
+  - [x] Починить YAML-декодинг: у `Yams.YAMLDecoder` нет `keyDecodingStrategy` (нужен snake_case маппинг) (2025-12-16) — YAML теперь парсится через `Yams.load` → JSON → `JSONDecoder.convertFromSnakeCase`.
+  - [x] Прогнать `swift build` и зафиксировать статус (2025-12-16) — `swift build` проходит на Swift 6.2.3.
+- [~] Реализовать permissions/onboarding (Screen Recording, Accessibility, Input Monitoring), обработку отказов и установку LaunchAgent — started 2025-12-16: декомпозиция добавлена.
+  - [x] Определить список разрешений и критерии “готово для трекинга” (2025-12-16) — критерий: Screen Recording + Accessibility + Input Monitoring = granted (`mac-app/Sources/LTATApp/Permissions.swift`).
+  - [x] Реализовать `PermissionStatus`/проверки для Screen Recording / Accessibility / Input Monitoring (2025-12-16) — `PermissionsManager.refresh()` (`mac-app/Sources/LTATApp/Permissions.swift`).
+  - [x] Реализовать механизм “запросить/подсказать”: `CGRequestScreenCaptureAccess`, `AXIsProcessTrustedWithOptions`, инструкции для Input Monitoring (2025-12-16) — добавлены request/open settings методы (`mac-app/Sources/LTATApp/Permissions.swift`, `mac-app/Sources/LTATApp/OnboardingView.swift`).
+  - [x] Добавить экран/флоу онбординга в SwiftUI (пошагово, кнопки “Open System Settings”, статус-лейблы) (2025-12-16) — `OnboardingView` (`mac-app/Sources/LTATApp/OnboardingView.swift`).
+  - [x] Заблокировать `Start` и показать онбординг, пока нет нужных разрешений (2025-12-16) — `ContentView` показывает onboarding, пока `isReadyForTracking == false` (`mac-app/Sources/LTATApp/ContentView.swift`).
+  - [x] Добавить polling/обновление статусов после возврата из System Settings (2025-12-16) — refresh на `NSApplication.didBecomeActiveNotification` + manual refresh (`mac-app/Sources/LTATApp/OnboardingView.swift`).
+  - [x] Определиться с форматом helper-а и LaunchAgent (отдельный бинарь vs режим в основном приложении) (2025-12-16) — принято: вариант A (один бинарь с `--helper`), зафиксировано в DECISIONS.md (2025-12-16).
+  - [x] Реализовать установку/удаление LaunchAgent (plist в `~/Library/LaunchAgents`, enable/disable) (2025-12-16) — добавлен `LaunchAgentManager` + CLI флаги `--install-launchagent/--uninstall-launchagent` и UI-кнопки.
+  - [~] Прогнать сборку и smoke: запуск, проверка переходов, логирование отказов (2025-12-16) — `swift build` и `swift run LTATApp -- --helper --once` ок; UI-переходы/permissions проверить вручную.
 - [ ] Реализовать state machine и квантайзер: статусы stopped/tracking/paused_by_system, partial-логика (drop/too_short), авто-пауза при sleep/display off, попап возобновления.
 - [ ] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
 - [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.

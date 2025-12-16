@@ -2,17 +2,33 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel: AppViewModel
+    @StateObject private var permissions = PermissionsManager()
+    private let launchAgent = LaunchAgentManager()
+    @State private var launchAgentInstalled: Bool = false
+    @State private var launchAgentStatusMessage: String = ""
 
     var body: some View {
+        if permissions.isReadyForTracking {
+            mainView
+        } else {
+            OnboardingView(permissions: permissions)
+        }
+    }
+
+    private var mainView: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
             projectTaskPicker
             statusControls
             configSummary
+            launchAgentControls
             Spacer()
         }
         .padding()
         .frame(minWidth: 480, minHeight: 360)
+        .task {
+            refreshLaunchAgentStatus()
+        }
     }
 
     private var header: some View {
@@ -73,5 +89,56 @@ struct ContentView: View {
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))
+    }
+
+    private var launchAgentControls: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Auto-start helper (LaunchAgent)")
+                .font(.subheadline.weight(.semibold))
+            HStack(spacing: 12) {
+                Text(launchAgentInstalled ? "Installed" : "Not installed")
+                    .foregroundStyle(launchAgentInstalled ? .green : .secondary)
+                Spacer()
+                Button("Install") { installLaunchAgent() }
+                    .disabled(launchAgentInstalled)
+                Button("Uninstall") { uninstallLaunchAgent() }
+                    .disabled(!launchAgentInstalled)
+                Button("Refresh") { refreshLaunchAgentStatus() }
+            }
+            if !launchAgentStatusMessage.isEmpty {
+                Text(launchAgentStatusMessage)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))
+    }
+
+    private func refreshLaunchAgentStatus() {
+        launchAgentInstalled = launchAgent.isInstalled()
+    }
+
+    private func installLaunchAgent() {
+        do {
+            try launchAgent.install()
+            launchAgentInstalled = true
+            launchAgentStatusMessage = "Installed (\(launchAgent.label))"
+            AppLogger.shared.log(level: .info, component: "launchagent", message: "Installed from UI", metadata: ["label": launchAgent.label])
+        } catch {
+            launchAgentStatusMessage = "Install failed: \(error)"
+            AppLogger.shared.log(level: .error, component: "launchagent", message: "Install failed: \(error)", metadata: ["label": launchAgent.label])
+        }
+    }
+
+    private func uninstallLaunchAgent() {
+        do {
+            try launchAgent.uninstall()
+            launchAgentInstalled = false
+            launchAgentStatusMessage = "Uninstalled (\(launchAgent.label))"
+            AppLogger.shared.log(level: .info, component: "launchagent", message: "Uninstalled from UI", metadata: ["label": launchAgent.label])
+        } catch {
+            launchAgentStatusMessage = "Uninstall failed: \(error)"
+            AppLogger.shared.log(level: .error, component: "launchagent", message: "Uninstall failed: \(error)", metadata: ["label": launchAgent.label])
+        }
     }
 }

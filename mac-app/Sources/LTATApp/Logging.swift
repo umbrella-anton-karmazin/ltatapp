@@ -1,13 +1,13 @@
 import Foundation
 
-enum LogLevel: String {
+enum LogLevel: String, Codable, Sendable {
     case debug
     case info
     case warning
     case error
 }
 
-struct AuditEvent: Codable {
+struct AuditEvent: Codable, Sendable {
     let timestamp: Date
     let level: LogLevel
     let component: String
@@ -15,33 +15,38 @@ struct AuditEvent: Codable {
     let metadata: [String: String]?
 }
 
-final class AppLogger {
+final class AppLogger: @unchecked Sendable {
     static let shared = AppLogger()
 
+    private static let queueKey = DispatchSpecificKey<UInt8>()
     private let queue = DispatchQueue(label: "ltatapp.logger", qos: .background)
     private var fileHandle: FileHandle?
     private var logLevel: LogLevel = .info
     private var logURL: URL?
 
     init(config: AppConfig = .default, fileManager: FileManager = .default) {
+        queue.setSpecific(key: AppLogger.queueKey, value: 1)
         apply(config: config, fileManager: fileManager)
     }
 
     func log(level: LogLevel, component: String = "app", message: String, metadata: [String: String]? = nil) {
-        guard shouldLog(level: level) else { return }
         let event = AuditEvent(timestamp: Date(), level: level, component: component, message: message, metadata: metadata)
         queue.async { [weak self] in
-            self?.write(event: event)
+            guard let self else { return }
+            guard self.shouldLog(level: level) else { return }
+            self.write(event: event)
         }
     }
 
     func apply(config: AppConfig, fileManager: FileManager = .default) {
-        logLevel = LogLevel(rawValue: config.logging.logLevel.lowercased()) ?? .info
-        let resolved = AppLogger.resolveLogURL(from: config, fileManager: fileManager)
-        guard resolved != logURL else { return }
-        logURL = resolved
-        fileManager.createIntermediateDirectories(for: resolved)
-        fileHandle = FileHandle(forWritingAtPath: resolved.path) ?? FileManager.default.createAndReturnFileHandle(at: resolved)
+        syncOnQueue {
+            logLevel = LogLevel(rawValue: config.logging.logLevel.lowercased()) ?? .info
+            let resolved = AppLogger.resolveLogURL(from: config, fileManager: fileManager)
+            guard resolved != logURL else { return }
+            logURL = resolved
+            fileManager.createIntermediateDirectories(for: resolved)
+            fileHandle = FileHandle(forWritingAtPath: resolved.path) ?? FileManager.default.createAndReturnFileHandle(at: resolved)
+        }
     }
 
     private func shouldLog(level: LogLevel) -> Bool {
@@ -67,6 +72,14 @@ final class AppLogger {
         }
         let base = fileManager.urls(for: .libraryDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: fileManager.currentDirectoryPath)
         return base.appendingPathComponent(config.logging.logFilePath)
+    }
+
+    private func syncOnQueue(_ body: () -> Void) {
+        if DispatchQueue.getSpecific(key: AppLogger.queueKey) != nil {
+            body()
+            return
+        }
+        queue.sync(execute: body)
     }
 }
 

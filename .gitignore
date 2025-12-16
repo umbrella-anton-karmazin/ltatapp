@@ -1,6 +1,11 @@
 .DS_Store
 /mac-app/.build
 /mac-app/Packages
+/mac-app/.swiftpm/
+/mac-app/.codex_build/
+/mac-app/.codex_cache/
+/mac-app/.codex_home/
+/mac-app/.codex_swiftpm/
 xcuserdata/
 DerivedData/
 /mac-app/.swiftpm/configuration/registries.json
