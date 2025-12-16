@@ -21,7 +21,7 @@ Created 2025-02-28.
   - [x] Починить ошибки Swift 6 Concurrency для `AppLogger.shared` / `@Sendable` closure (2025-12-16) — добавлены `Sendable`/`@unchecked Sendable` и синхронизация состояния логгера через его очередь.
   - [x] Починить YAML-декодинг: у `Yams.YAMLDecoder` нет `keyDecodingStrategy` (нужен snake_case маппинг) (2025-12-16) — YAML теперь парсится через `Yams.load` → JSON → `JSONDecoder.convertFromSnakeCase`.
   - [x] Прогнать `swift build` и зафиксировать статус (2025-12-16) — `swift build` проходит на Swift 6.2.3.
-- [~] Реализовать permissions/onboarding (Screen Recording, Accessibility, Input Monitoring), обработку отказов и установку LaunchAgent — started 2025-12-16: декомпозиция добавлена.
+- [x] Реализовать permissions/onboarding (Screen Recording, Accessibility, Input Monitoring), обработку отказов и установку LaunchAgent — completed 2025-12-16: onboarding + gating + LaunchAgent (UI/CLI); подтверждено пользователем.
   - [x] Определить список разрешений и критерии “готово для трекинга” (2025-12-16) — критерий: Screen Recording + Accessibility + Input Monitoring = granted (`mac-app/Sources/LTATApp/Permissions.swift`).
   - [x] Реализовать `PermissionStatus`/проверки для Screen Recording / Accessibility / Input Monitoring (2025-12-16) — `PermissionsManager.refresh()` (`mac-app/Sources/LTATApp/Permissions.swift`).
   - [x] Реализовать механизм “запросить/подсказать”: `CGRequestScreenCaptureAccess`, `AXIsProcessTrustedWithOptions`, инструкции для Input Monitoring (2025-12-16) — добавлены request/open settings методы (`mac-app/Sources/LTATApp/Permissions.swift`, `mac-app/Sources/LTATApp/OnboardingView.swift`).
@@ -30,7 +30,7 @@ Created 2025-02-28.
   - [x] Добавить polling/обновление статусов после возврата из System Settings (2025-12-16) — refresh на `NSApplication.didBecomeActiveNotification` + manual refresh (`mac-app/Sources/LTATApp/OnboardingView.swift`).
   - [x] Определиться с форматом helper-а и LaunchAgent (отдельный бинарь vs режим в основном приложении) (2025-12-16) — принято: вариант A (один бинарь с `--helper`), зафиксировано в DECISIONS.md (2025-12-16).
   - [x] Реализовать установку/удаление LaunchAgent (plist в `~/Library/LaunchAgents`, enable/disable) (2025-12-16) — добавлен `LaunchAgentManager` + CLI флаги `--install-launchagent/--uninstall-launchagent` и UI-кнопки.
-  - [~] Прогнать сборку и smoke: запуск, проверка переходов, логирование отказов (2025-12-16) — `swift build` и `swift run LTATApp -- --helper --once` ок; UI-переходы/permissions проверить вручную.
+  - [x] Прогнать сборку и smoke: запуск, проверка переходов, логирование отказов (2025-12-16) — `swift build` и `swift run LTATApp -- --helper --once` ок; UI/permissions проверены вручную (подтверждено пользователем).
 - [ ] Реализовать state machine и квантайзер: статусы stopped/tracking/paused_by_system, partial-логика (drop/too_short), авто-пауза при sleep/display off, попап возобновления.
 - [ ] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
 - [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
