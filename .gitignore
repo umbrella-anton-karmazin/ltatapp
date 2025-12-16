@@ -6,6 +6,8 @@
 /mac-app/.codex_cache/
 /mac-app/.codex_home/
 /mac-app/.codex_swiftpm/
+/mac-app/.home/
+/mac-app/.xdg-config/
 xcuserdata/
 DerivedData/
 /mac-app/.swiftpm/configuration/registries.json

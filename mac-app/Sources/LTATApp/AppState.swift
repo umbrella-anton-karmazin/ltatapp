@@ -41,12 +41,14 @@ final class AppViewModel: ObservableObject {
     @Published var lastQuantum: QuantumSummary?
     @Published var systemPauseReason: String?
     @Published var lastActivity: ActivityAggregate?
+    @Published var activityMonitoringIssue: String?
 
     private let logger: AppLogger
     private let systemEvents = SystemEventMonitor()
     private let activityMonitor = ActivityMonitor()
     private var currentQuantumStartedAt: Date?
     private var quantumTimer: Timer?
+    private var activityTimer: Timer?
 
     init(config: AppConfig) {
         self.config = config
@@ -65,7 +67,8 @@ final class AppViewModel: ObservableObject {
         systemPauseReason = nil
         resumePrompt = nil
         activityMonitor.resetForNewQuantum()
-        activityMonitor.start()
+        activityMonitoringIssue = activityMonitor.start() ? nil : activityMonitor.lastStartError
+        startActivityUpdates()
         startQuantum(at: Date())
         logger.log(level: .info, component: "tracking", message: "Tracking started", metadata: ["project": currentProject, "task": currentTask])
         lastLogMessage = "Tracking started"
@@ -74,6 +77,7 @@ final class AppViewModel: ObservableObject {
     func stopTracking() {
         guard status != .stopped else { return }
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .userStop, systemPauseReason: nil)
+        stopActivityUpdates()
         activityMonitor.stop()
         invalidateTimer()
         status = .stopped
@@ -86,6 +90,7 @@ final class AppViewModel: ObservableObject {
     func pauseBySystem(reason: String) {
         guard status == .tracking else { return }
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .systemPause, systemPauseReason: reason)
+        stopActivityUpdates()
         activityMonitor.stop()
         invalidateTimer()
         status = .pausedBySystem
@@ -100,7 +105,8 @@ final class AppViewModel: ObservableObject {
         systemPauseReason = nil
         resumePrompt = nil
         activityMonitor.resetForNewQuantum()
-        activityMonitor.start()
+        activityMonitoringIssue = activityMonitor.start() ? nil : activityMonitor.lastStartError
+        startActivityUpdates()
         startQuantum(at: Date())
         logger.log(level: .info, component: "tracking", message: "Resumed after system pause")
         lastLogMessage = "Resumed after pause"
@@ -129,6 +135,22 @@ final class AppViewModel: ObservableObject {
     private func invalidateTimer() {
         quantumTimer?.invalidate()
         quantumTimer = nil
+    }
+
+    private func startActivityUpdates() {
+        activityTimer?.invalidate()
+        activityTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.lastActivity = self.activityMonitor.computeAggregate(config: self.config)
+            }
+        }
+        lastActivity = activityMonitor.computeAggregate(config: config)
+    }
+
+    private func stopActivityUpdates() {
+        activityTimer?.invalidate()
+        activityTimer = nil
     }
 
     private func handleQuantumTimerFired() {

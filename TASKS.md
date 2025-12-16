@@ -41,12 +41,14 @@ Created 2025-02-28.
   - [x] Протянуть всё в `AppViewModel`: один источник правды для `status`, reason, и команды Start/Stop/Resume (2025-12-16) — логика сосредоточена в `AppViewModel` (`mac-app/Sources/LTATApp/AppState.swift`).
   - [x] Логирование переходов и квантов (AuditEvent): state transitions, причины паузы, длительности квантов (2025-12-16) — добавлены quantum logs + transition logs (`mac-app/Sources/LTATApp/AppState.swift`).
   - [x] Smoke: вручную проверить Start→(sleep/screens off)→paused→Resume и partial-пороги (2025-12-16) — подтверждено пользователем.
-- [~] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги — started 2025-12-16: декомпозиция добавлена.
+- [x] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги — started 2025-12-16: декомпозиция добавлена; completed 2025-12-16 — live UI + проверка разрешений + smoke подтвержден.
   - [x] Определить модель агрегатов активности на квант (counts + activity_percent + idle/low) (2025-12-16) — `ActivityCounts`/`ActivityAggregate` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
   - [x] Реализовать сбор событий (event tap): keypress/click/scroll + mouse distance (2025-12-16) — `ActivityMonitor` через `CGEvent.tapCreate` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
   - [x] Реализовать расчет `activity_percent` по конфигу (K_MAX/C_MAX/S_MAX/M_MAX + веса) (2025-12-16) — `computeActivityPercent` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
   - [x] Интегрировать в квантайзер: reset на старт кванта, finalize на end, логирование (2025-12-16) — интеграция в `AppViewModel` + quantum logs (`mac-app/Sources/LTATApp/AppState.swift`).
-  - [ ] Smoke: потыкать ввод, убедиться что counts растут и `activity_percent` меняется (2025-12-16).
+  - [x] UI: показывать live activity (counts + activity_percent + idle/low) во время трекинга, не только в логах (2025-12-16) — добавлена карточка “Активность” в UI + периодическое обновление `lastActivity` в `AppViewModel`.
+  - [x] UI: индикатор проблем с Input Monitoring (если event tap не стартует) (2025-12-16) — выводится предупреждение в карточке “Активность”, если `CGEvent.tapCreate` вернул `nil`.
+  - [x] Smoke: потыкать ввод, убедиться что counts растут и `activity_percent` меняется (2025-12-16) — completed 2025-12-16: подтверждено пользователем (после запуска правильного билда с выданными разрешениями); CLI-smoke `--smoke-activity` добавлен.
 - [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
 - [ ] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные.
 - [ ] Привязать хранилище: запись Session/Quantum/ActivityAggregate/FocusAggregate/ScreenshotMetadata/AuditLog, индексы, очистка по политике хранения (неделя пока без синка).
@@ -54,5 +56,8 @@ Created 2025-02-28.
 - [ ] Интегрировать AI mock `AIReportAnalyzer` в отчет (логирование payload, мок-ответ).
 - [ ] Полировать UX: главный экран Start/Stop + проект/задача, Today view, Report preview, Settings (конфиг/приватность/retention).
   - [ ] UI: добавить таймер текущего кванта, суммарное затреканное время и сводку (2025-12-16).
+  - [x] UI: починить детект разрешений в онбординге (Screen Recording / Input Monitoring) (2025-12-16) — `CGPreflightScreenCaptureAccess` дополнен fallback через `CGDisplayCreateImage`, Input Monitoring проверяется через `IOHIDCheckAccess` (с fallback на event tap).
 - [ ] Реализовать sync stub: очередь SyncQueue, упаковка payload кванта (без отправки), удержание скринов/логов до подтверждения.
 - [ ] Packaging/QA: подпись/нотаризация, автозапуск helper-а, sanity-тесты квантов, отчетов, хранения/очистки.
+- [x] Сгенерировать `README.md` как для публичного репозитория (2025-12-16) — добавлен `README.md` со статусом WIP, описанием и инструкциями сборки/приватности.
+- [x] Repo hygiene: игнорировать локальные кэши `mac-app/.home/` и `mac-app/.xdg-config/` (2025-12-16) — добавлено в `.gitignore`, чтобы не тащить `clang/ModuleCache` и swiftpm-ссылки в git.

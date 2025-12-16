@@ -20,6 +20,7 @@ struct ContentView: View {
             header
             projectTaskPicker
             statusControls
+            activitySummary
             configSummary
             launchAgentControls
             Spacer()
@@ -109,6 +110,32 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
             Text("Activity thresholds: low <\(viewModel.config.activity.lowActivityThreshold)% | weights k/c/s/m: \(viewModel.config.activity.weights.keypress)/\(viewModel.config.activity.weights.click)/\(viewModel.config.activity.weights.scroll)/\(viewModel.config.activity.weights.mouseDistance)")
                 .foregroundStyle(.secondary)
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))
+    }
+
+    private var activitySummary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Активность (live)")
+                .font(.subheadline.weight(.semibold))
+            if let issue = viewModel.activityMonitoringIssue {
+                Text(issue)
+                    .foregroundStyle(.red)
+            }
+            if let activity = viewModel.lastActivity {
+                HStack {
+                    Text("\(activity.activityPercent)%")
+                        .font(.title3.weight(.semibold))
+                    Text("idle: \(activity.isIdle ? "yes" : "no") • low: \(activity.isLowActivity ? "yes" : "no")")
+                        .foregroundStyle(.secondary)
+                }
+                Text("k \(activity.counts.keypressCount) • c \(activity.counts.clickCount) • s \(activity.counts.scrollCount) • m \(Int(activity.counts.mouseDistancePx.rounded()))px")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("—")
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))

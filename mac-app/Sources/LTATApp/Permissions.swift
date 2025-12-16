@@ -2,6 +2,7 @@ import AppKit
 import ApplicationServices
 import CoreGraphics
 import Foundation
+import IOKit.hid
 
 enum PermissionStatus: String {
     case unknown
@@ -20,9 +21,9 @@ final class PermissionsManager: ObservableObject {
     }
 
     func refresh() {
-        screenRecording = CGPreflightScreenCaptureAccess() ? .granted : .missing
-        accessibility = AXIsProcessTrusted() ? .granted : .missing
-        inputMonitoring = canCreateInputMonitoringEventTap() ? .granted : .missing
+        screenRecording = hasScreenRecordingPermission() ? .granted : .missing
+        accessibility = hasAccessibilityPermission() ? .granted : .missing
+        inputMonitoring = hasInputMonitoringPermission() ? .granted : .missing
     }
 
     func requestScreenRecording() {
@@ -52,6 +53,30 @@ final class PermissionsManager: ObservableObject {
         guard let url = URL(string: urlString) else { return }
         NSWorkspace.shared.open(url)
     }
+}
+
+private func hasScreenRecordingPermission() -> Bool {
+    if CGPreflightScreenCaptureAccess() {
+        return true
+    }
+
+    return autoreleasepool {
+        CGDisplayCreateImage(CGMainDisplayID()) != nil
+    }
+}
+
+private func hasAccessibilityPermission() -> Bool {
+    AXIsProcessTrusted()
+}
+
+private func hasInputMonitoringPermission() -> Bool {
+    if #available(macOS 10.15, *) {
+        let status = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        if status == kIOHIDAccessTypeGranted {
+            return true
+        }
+    }
+    return canCreateInputMonitoringEventTap()
 }
 
 private func canCreateInputMonitoringEventTap() -> Bool {

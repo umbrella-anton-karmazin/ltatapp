@@ -34,6 +34,7 @@ struct OnboardingView: View {
                 title: "Screen Recording",
                 subtitle: "Нужно для захвата скриншотов всех дисплеев",
                 status: permissions.screenRecording,
+                footnote: permissions.screenRecording == .missing ? "Если разрешение уже включено, macOS может требовать перезапуск приложения." : nil,
                 primaryActionTitle: "Request",
                 primaryAction: { permissions.requestScreenRecording() },
                 secondaryActionTitle: "Open Settings",
@@ -54,6 +55,7 @@ struct OnboardingView: View {
                 title: "Input Monitoring",
                 subtitle: "Нужно для чтения событий клавиатуры/мыши; выдаётся в Privacy & Security",
                 status: permissions.inputMonitoring,
+                footnote: permissions.inputMonitoring == .missing ? "Если уже включено, перезапусти приложение и проверь снова." : nil,
                 primaryActionTitle: "Open Settings",
                 primaryAction: { permissions.openSystemSettingsInputMonitoring() }
             )
@@ -76,6 +78,7 @@ private struct PermissionRow: View {
     let title: String
     let subtitle: String
     let status: PermissionStatus
+    let footnote: String?
     let primaryActionTitle: String
     let primaryAction: () -> Void
     let secondaryActionTitle: String?
@@ -85,6 +88,7 @@ private struct PermissionRow: View {
         title: String,
         subtitle: String,
         status: PermissionStatus,
+        footnote: String? = nil,
         primaryActionTitle: String,
         primaryAction: @escaping () -> Void,
         secondaryActionTitle: String? = nil,
@@ -93,6 +97,7 @@ private struct PermissionRow: View {
         self.title = title
         self.subtitle = subtitle
         self.status = status
+        self.footnote = footnote
         self.primaryActionTitle = primaryActionTitle
         self.primaryAction = primaryAction
         self.secondaryActionTitle = secondaryActionTitle
@@ -114,6 +119,11 @@ private struct PermissionRow: View {
                 if let secondaryActionTitle, let secondaryAction {
                     Button(secondaryActionTitle, action: secondaryAction)
                 }
+            }
+            if let footnote {
+                Text(footnote)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding()
@@ -156,4 +166,3 @@ private struct StatusPill: View {
         }
     }
 }
-

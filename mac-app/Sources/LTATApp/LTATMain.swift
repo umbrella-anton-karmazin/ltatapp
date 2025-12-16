@@ -21,7 +21,11 @@ enum LTATMain {
             return
         }
 
+        if args.contains("--smoke-activity") {
+            ActivitySmokeRunner.main()
+            return
+        }
+
         LTATApp.main()
     }
 }
-
