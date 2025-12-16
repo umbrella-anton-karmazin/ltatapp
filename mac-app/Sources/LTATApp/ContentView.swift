@@ -21,6 +21,7 @@ struct ContentView: View {
             projectTaskPicker
             statusControls
             activitySummary
+            focusSummary
             configSummary
             launchAgentControls
             Spacer()
@@ -134,6 +135,35 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             } else {
                 Text("—")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(nsColor: .windowBackgroundColor)))
+    }
+
+    private var focusSummary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Фокус")
+                .font(.subheadline.weight(.semibold))
+
+            if let name = viewModel.frontmostAppName {
+                Text("Frontmost: \(name) • \(viewModel.frontmostAppCategory ?? "—")")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Frontmost: —")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let focus = viewModel.lastFocus {
+                Text("Primary: \(focus.primaryAppName ?? "—") • \(focus.primaryCategory ?? "—")")
+                    .foregroundStyle(.secondary)
+                Text("switches q \(focus.appSwitchCount) • hour \(focus.switchesThisHour) • day \(focus.switchesToday)")
+                    .foregroundStyle(.secondary)
+                Text("focus_mode: \(focus.focusModeFlag ? "yes" : "no") (streak \(focus.focusModeStreak)) • anomaly: \(focus.anomalySwitchingFlag ? "yes" : "no")")
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Last quantum: —")
                     .foregroundStyle(.secondary)
             }
         }

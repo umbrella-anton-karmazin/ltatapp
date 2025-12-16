@@ -138,6 +138,25 @@ Update 2025-12-16: Бизнес-семантика `too_short`
   - anomalies: `switching_per_quantum_threshold`, `switching_per_hour_threshold`, `focus_mode_min_consecutive_quanta` (>=2).
   - rawEvents: `enableRawEvents` (false в MVP), `rawStoragePath` (future).
   - logging/reporting: `log_level`, `report_output_path`, `report_auto_end_of_day` (true), `ai_analysis_enabled` (mock).
+
+Update 2025-12-16: Семантика трекинга фокуса и переключений (MVP)
+
+- Источник событий: `NSWorkspace.didActivateApplicationNotification` (frontmost app changes) + периодический “poll” `NSWorkspace.shared.frontmostApplication` как fallback от пропусков/edge-cases (детали — в реализации).
+- Модель: поток `FocusSample{ts, appName, bundleId, category}`; category определяется как `config.categories[bundleId] ?? (bundleId.starts(with: "com.apple.") ? "System" : "Other")`.
+- Переключение (switch): изменение `bundleId` между соседними `FocusSample` во время `tracking` (переключения окон внутри одного приложения не считаются).
+- Агрегация по квантy:
+  - `switches_count` / `FocusAggregate.app_switch_count`: число app-switch событий внутри кванта.
+  - `FocusAggregate.category_switch_count`: число переключений между категориями (если категория реально меняется).
+  - `primary_app`: приложение с максимальным `dwell_ms` за квант; `primary_category` — категория по `primary_app`.
+  - `FocusAggregate.primary_app_dwell_ms`: dwell для `primary_app`.
+- Окна агрегации:
+  - “per quantum” — внутри текущего кванта,
+  - “per hour” — ~~rolling 60 минут~~ Update 2025-12-16: календарный час (локальный timezone; считается по `ts` app-switch событий),
+  - “per day” — с начала локального дня (local midnight) до текущего момента.
+- Флаги:
+  - `anomaly_switching_flag`: `true`, если `switches_count > switchingPerQuantum` или `switches_last_hour > switchingPerHour` (пороги — из `config.anomalies`).
+  - `focus_mode_flag`: `true`, если текущий квант находится в streak одного `primary_app` длиной `>= focusModeMinConsecutiveQuanta` (порог — из `config.anomalies`).
+- Границы статусов: фокус/переключения считаются только в статусе `tracking`; на `paused_by_system`/Stop квант финализируется и мониторинг останавливается.
 - Схема данных (SQLite, зашифровано):
   - Project(id, name, color?, active_flag, created_at/updated_at)
   - Task(id, project_id, name, active_flag, created_at/updated_at)
@@ -197,3 +216,6 @@ Update 2025-02-28: MVP-бэклог и порядок работ (Mac)
 - ~~Какой формат helper/LaunchAgent для MVP: отдельный helper-executable или режим `--helper` в основном бинаре?~~ Resolved 2025-12-16: для MVP — вариант A (один бинарь с режимом `--helper`); пост-MVP можно вернуться к отдельному helper-executable при необходимости разнести права/IPC.
 - Какой механизм автостарта выбрать для production-дистрибуции: оставить LaunchAgent с “self-heal” путей или перейти на `ServiceManagement` (`SMAppService` / Login Items)? (2025-12-16)
 - ~~Какие системные события должны триггерить auto-pause/auto-resume в MVP: только sleep/screens sleep, или также lock/unlock/fast user switching?~~ Resolved 2025-12-16: в MVP auto-pause триггерится также на lock/unlock (в дополнение к sleep/screens sleep); auto-resume не делаем, только prompt на Resume.
+- ~~`focus_mode`-streak: если между “длинными” квантами попадается `too_short` (partial 30–120s), он должен (A) продолжать streak или (B) сбрасывать streak по умолчанию? (2025-12-16)~~ Resolved 2025-12-16: `too_short` сбрасывает streak по умолчанию.
+- ~~Как именно интерпретировать “переключения в час/день” в UI/отчетах: rolling 60 минут vs календарный час; день — local midnight vs сессия трекинга? (2025-12-16)~~ Resolved 2025-12-16: “per hour” = календарный час (локальный timezone), “per day” = local midnight.
+- ~~Должен ли `anomaly_switching_flag` учитывать только app switches (`bundleId`), или также category switches (отдельно/вместе)?~~ Resolved 2025-12-16: учитывать только app switches (смена `bundleId`); category switches считать отдельно, но не включать в anomaly в MVP.

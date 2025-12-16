@@ -28,6 +28,7 @@ struct QuantumSummary: Equatable {
     let endReason: QuantumEndReason
     let systemPauseReason: String?
     let activity: ActivityAggregate
+    let focus: FocusQuantumAggregate?
 }
 
 @MainActor
@@ -42,10 +43,15 @@ final class AppViewModel: ObservableObject {
     @Published var systemPauseReason: String?
     @Published var lastActivity: ActivityAggregate?
     @Published var activityMonitoringIssue: String?
+    @Published var frontmostAppName: String?
+    @Published var frontmostAppCategory: String?
+    @Published var frontmostAppBundleId: String?
+    @Published var lastFocus: FocusQuantumAggregate?
 
     private let logger: AppLogger
     private let systemEvents = SystemEventMonitor()
     private let activityMonitor = ActivityMonitor()
+    private let focusMonitor = AppFocusMonitor()
     private var currentQuantumStartedAt: Date?
     private var quantumTimer: Timer?
     private var activityTimer: Timer?
@@ -66,6 +72,12 @@ final class AppViewModel: ObservableObject {
         status = .tracking
         systemPauseReason = nil
         resumePrompt = nil
+        focusMonitor.start(config: config) { [weak self] sample in
+            guard let self else { return }
+            self.frontmostAppName = sample.appName
+            self.frontmostAppCategory = sample.category
+            self.frontmostAppBundleId = sample.bundleId
+        }
         activityMonitor.resetForNewQuantum()
         activityMonitoringIssue = activityMonitor.start() ? nil : activityMonitor.lastStartError
         startActivityUpdates()
@@ -79,6 +91,7 @@ final class AppViewModel: ObservableObject {
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .userStop, systemPauseReason: nil)
         stopActivityUpdates()
         activityMonitor.stop()
+        focusMonitor.stop()
         invalidateTimer()
         status = .stopped
         systemPauseReason = nil
@@ -92,6 +105,7 @@ final class AppViewModel: ObservableObject {
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .systemPause, systemPauseReason: reason)
         stopActivityUpdates()
         activityMonitor.stop()
+        focusMonitor.stop()
         invalidateTimer()
         status = .pausedBySystem
         systemPauseReason = reason
@@ -104,6 +118,12 @@ final class AppViewModel: ObservableObject {
         status = .tracking
         systemPauseReason = nil
         resumePrompt = nil
+        focusMonitor.start(config: config) { [weak self] sample in
+            guard let self else { return }
+            self.frontmostAppName = sample.appName
+            self.frontmostAppCategory = sample.category
+            self.frontmostAppBundleId = sample.bundleId
+        }
         activityMonitor.resetForNewQuantum()
         activityMonitoringIssue = activityMonitor.start() ? nil : activityMonitor.lastStartError
         startActivityUpdates()
@@ -119,6 +139,7 @@ final class AppViewModel: ObservableObject {
     private func startQuantum(at date: Date) {
         currentQuantumStartedAt = date
         activityMonitor.resetForNewQuantum()
+        focusMonitor.resetForNewQuantum(startedAt: date, config: config)
         scheduleQuantumTimer()
     }
 
@@ -177,6 +198,15 @@ final class AppViewModel: ObservableObject {
         let isDropped = isPartial && duration < drop
         let isTooShort = isPartial && !isDropped && duration < tooShort
 
+        let focus = focusMonitor.finalizeQuantum(
+            endedAt: end,
+            config: config,
+            isPartial: isPartial,
+            isTooShort: isTooShort,
+            isDropped: isDropped
+        )
+        lastFocus = focus
+
         let summary = QuantumSummary(
             startedAt: start,
             endedAt: end,
@@ -186,7 +216,8 @@ final class AppViewModel: ObservableObject {
             isDropped: isDropped,
             endReason: endReason,
             systemPauseReason: systemPauseReason,
-            activity: activity
+            activity: activity,
+            focus: focus
         )
 
         if !isDropped {
@@ -212,7 +243,17 @@ final class AppViewModel: ObservableObject {
                 "activity_k": String(activity.counts.keypressCount),
                 "activity_c": String(activity.counts.clickCount),
                 "activity_s": String(activity.counts.scrollCount),
-                "activity_m": String(Int(activity.counts.mouseDistancePx.rounded()))
+                "activity_m": String(Int(activity.counts.mouseDistancePx.rounded())),
+                "primary_app": focus?.primaryAppName ?? "",
+                "primary_bundle_id": focus?.primaryBundleId ?? "",
+                "primary_category": focus?.primaryCategory ?? "",
+                "switches_count": String(focus?.appSwitchCount ?? 0),
+                "category_switch_count": String(focus?.categorySwitchCount ?? 0),
+                "switches_this_hour": String(focus?.switchesThisHour ?? 0),
+                "switches_today": String(focus?.switchesToday ?? 0),
+                "focus_mode_streak": String(focus?.focusModeStreak ?? 0),
+                "focus_mode_flag": String(focus?.focusModeFlag ?? false),
+                "anomaly_switching_flag": String(focus?.anomalySwitchingFlag ?? false)
             ]
         )
     }

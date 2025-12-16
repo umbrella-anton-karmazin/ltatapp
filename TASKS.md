@@ -49,7 +49,14 @@ Created 2025-02-28.
   - [x] UI: показывать live activity (counts + activity_percent + idle/low) во время трекинга, не только в логах (2025-12-16) — добавлена карточка “Активность” в UI + периодическое обновление `lastActivity` в `AppViewModel`.
   - [x] UI: индикатор проблем с Input Monitoring (если event tap не стартует) (2025-12-16) — выводится предупреждение в карточке “Активность”, если `CGEvent.tapCreate` вернул `nil`.
   - [x] Smoke: потыкать ввод, убедиться что counts растут и `activity_percent` меняется (2025-12-16) — completed 2025-12-16: подтверждено пользователем (после запуска правильного билда с выданными разрешениями); CLI-smoke `--smoke-activity` добавлен.
-- [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
+- [x] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching. — completed 2025-12-16: `AppFocusMonitor` + UI/debug + quantum logs.
+  - [x] Определить семантику “switch” и окна агрегации (квант/час/день) (2025-12-16) — completed: день = local midnight, час = календарный час (локальный timezone), anomaly = только app switches.
+  - [x] Спроектировать `AppFocusMonitor`: источники событий (NSWorkspace activation + polling fallback), модель `FocusSample` (2025-12-16) — `mac-app/Sources/LTATApp/AppFocusMonitor.swift`.
+  - [x] Определить агрегацию по квантy: dwell, primary app/category, `switches_count`, app/category switch counts (2025-12-16) — `FocusQuantumAggregate` + dwell-by-bundle + primary app.
+  - [x] Определить rolling-агрегации: switches_last_hour, switches_today (2025-12-16) — completed as calendar-hour buckets + per-day (local midnight) counters.
+  - [x] Определить флаги: `focus_mode_flag` (streak) и `anomaly_switching_flag` (пороги `switchingPerQuantum`/`switchingPerHour`) (2025-12-16) — computed in `finalizeQuantum`.
+  - [x] Интегрировать в lifecycle квантов: start/reset/finalize + логирование агрегатов (2025-12-16) — wiring in `mac-app/Sources/LTATApp/AppState.swift`.
+  - [x] Smoke: добавить `--smoke-focus` (или минимальный UI-debug) для проверки на живой системе (2025-12-16) — `--smoke-focus` via `mac-app/Sources/LTATApp/FocusSmokeRunner.swift` + UI card in `mac-app/Sources/LTATApp/ContentView.swift`.
 - [ ] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные.
 - [ ] Привязать хранилище: запись Session/Quantum/ActivityAggregate/FocusAggregate/ScreenshotMetadata/AuditLog, индексы, очистка по политике хранения (неделя пока без синка).
 - [ ] Генерировать HTML-отчет (конец дня + по запросу) с метриками/графиками/таймлайном скринов/аномалиями.

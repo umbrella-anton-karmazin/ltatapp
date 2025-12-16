@@ -26,6 +26,11 @@ enum LTATMain {
             return
         }
 
+        if args.contains("--smoke-focus") {
+            FocusSmokeRunner.main()
+            return
+        }
+
         LTATApp.main()
     }
 }
