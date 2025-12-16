@@ -29,6 +29,29 @@ struct ContentView: View {
         .task {
             refreshLaunchAgentStatus()
         }
+        .alert(
+            viewModel.resumePrompt?.title ?? "Resume tracking?",
+            isPresented: Binding(
+                get: { viewModel.resumePrompt != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        viewModel.dismissResumePrompt()
+                    }
+                }
+            )
+        ) {
+            Button("Resume") {
+                viewModel.resumeAfterPause()
+            }
+            Button("Stop") {
+                viewModel.stopTracking()
+            }
+            Button("Cancel", role: .cancel) {
+                viewModel.dismissResumePrompt()
+            }
+        } message: {
+            Text(viewModel.resumePrompt?.message ?? "")
+        }
     }
 
     private var header: some View {

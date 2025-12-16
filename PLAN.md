@@ -125,6 +125,14 @@ Update 2025-12-16: Запуск в production и автостарт helper-а
 - Ключевой production-риск LaunchAgent-подхода: в plist хранится абсолютный путь до исполняемого файла; при переносе `.app`/обновлении/смене пути plist может начать указывать на несуществующий бинарь.
 - Минимальная стратегия для продакшена без смены подхода: “self-heal” при каждом запуске UI — проверять, что plist указывает на текущий `.../LTATApp.app/Contents/MacOS/LTATApp`, и при расхождении переустанавливать/перезагружать LaunchAgent.
 - Альтернатива post-MVP: использовать `ServiceManagement` (`SMAppService` / Login Items) для более стабильного автостарта при перемещениях/обновлениях; при необходимости разнести UI и helper (вариант B) и/или добавить IPC.
+
+Update 2025-12-16: Бизнес-семантика `too_short`
+
+- `drop` и `too_short` — это не ошибки, а классификация *partial*-квантов при досрочном завершении (Stop или system pause): `<drop` — отбросить запись; `drop ≤ duration < too_short` — сохранить как `too_short`.
+- В MVP `too_short`-кванты:
+  - учитываются в “учтенном времени” (сумма `actualDurationSeconds` всех не-dropped квантов) и отображаются в таймлайне как короткие,
+  - но помечаются как менее репрезентативные для аналитики: в отчетах/агрегатах (активность/фокус/аномалии) могут считаться отдельно или исключаться из “основных” метрик по умолчанию,
+  - скриншоты/артефакты для `too_short` не являются обязательными (если квант прерван до захвата) — важнее корректно завершить квант и логировать причину.
   - screenshots: `downscale_width` (1280), `format` (jpeg|heic), `quality` (0–1), `storage_policy` (keep_until_sync: true, fallback_days: 7), `capture_all_displays` (true).
   - categories: список bundleId → category (Browser/IDE/Office/Messengers/Terminal/Design/Media/System); расширяемый.
   - anomalies: `switching_per_quantum_threshold`, `switching_per_hour_threshold`, `focus_mode_min_consecutive_quanta` (>=2).
@@ -188,3 +196,4 @@ Update 2025-02-28: MVP-бэклог и порядок работ (Mac)
 - ~~Использовать ли аудио/камеру для активности (речь/видео)?~~ Resolved 2025-02-28: не делаем, признано ненужным для MVP.
 - ~~Какой формат helper/LaunchAgent для MVP: отдельный helper-executable или режим `--helper` в основном бинаре?~~ Resolved 2025-12-16: для MVP — вариант A (один бинарь с режимом `--helper`); пост-MVP можно вернуться к отдельному helper-executable при необходимости разнести права/IPC.
 - Какой механизм автостарта выбрать для production-дистрибуции: оставить LaunchAgent с “self-heal” путей или перейти на `ServiceManagement` (`SMAppService` / Login Items)? (2025-12-16)
+- ~~Какие системные события должны триггерить auto-pause/auto-resume в MVP: только sleep/screens sleep, или также lock/unlock/fast user switching?~~ Resolved 2025-12-16: в MVP auto-pause триггерится также на lock/unlock (в дополнение к sleep/screens sleep); auto-resume не делаем, только prompt на Resume.

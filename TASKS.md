@@ -31,7 +31,16 @@ Created 2025-02-28.
   - [x] Определиться с форматом helper-а и LaunchAgent (отдельный бинарь vs режим в основном приложении) (2025-12-16) — принято: вариант A (один бинарь с `--helper`), зафиксировано в DECISIONS.md (2025-12-16).
   - [x] Реализовать установку/удаление LaunchAgent (plist в `~/Library/LaunchAgents`, enable/disable) (2025-12-16) — добавлен `LaunchAgentManager` + CLI флаги `--install-launchagent/--uninstall-launchagent` и UI-кнопки.
   - [x] Прогнать сборку и smoke: запуск, проверка переходов, логирование отказов (2025-12-16) — `swift build` и `swift run LTATApp -- --helper --once` ок; UI/permissions проверены вручную (подтверждено пользователем).
-- [ ] Реализовать state machine и квантайзер: статусы stopped/tracking/paused_by_system, partial-логика (drop/too_short), авто-пауза при sleep/display off, попап возобновления.
+- [x] Реализовать state machine и квантайзер: статусы stopped/tracking/paused_by_system, partial-логика (drop/too_short), авто-пауза при sleep/display off, попап возобновления — completed 2025-12-16: реализовано и проверено вручную.
+  - [x] Зафиксировать таблицу состояний/событий/переходов (Start/Stop, willSleep/didWake, screensDidSleep/screensDidWake, ручной Resume) (2025-12-16) — переходы инкапсулированы в `AppViewModel` (`mac-app/Sources/LTATApp/AppState.swift`) + `handle(systemEvent:)`.
+  - [x] Определить модель “сессия/квант” в памяти: timestamps, elapsed, флаги partial/too_short, reason для system pause (2025-12-16) — добавлены `QuantumSummary`, `QuantumEndReason`, `systemPauseReason` (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Реализовать Orchestrator: start/stop, единственный активный квант, таймер на `quantumSeconds` (2025-12-16) — квант-таймер + lifecycle в `AppViewModel` (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Реализовать partial-логику по конфигу: `<drop` отбросить, `<too_short` пометить, иначе сохранить partial (2025-12-16) — `finalizeQuantumIfNeeded` (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Подключить system hooks: sleep/wake и screens sleep/wake → перевод в `pausedBySystem` + фиксация partial кванта (2025-12-16) — `SystemEventMonitor` + pause/resume prompt на wake/unlock (`mac-app/Sources/LTATApp/SystemEventMonitor.swift`, `mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Реализовать UX-попап возобновления: при `pausedBySystem` показывать prompt “Resume?” и обрабатывать Resume/Stop (2025-12-16) — alert в `ContentView` (`mac-app/Sources/LTATApp/ContentView.swift`).
+  - [x] Протянуть всё в `AppViewModel`: один источник правды для `status`, reason, и команды Start/Stop/Resume (2025-12-16) — логика сосредоточена в `AppViewModel` (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Логирование переходов и квантов (AuditEvent): state transitions, причины паузы, длительности квантов (2025-12-16) — добавлены quantum logs + transition logs (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [x] Smoke: вручную проверить Start→(sleep/screens off)→paused→Resume и partial-пороги (2025-12-16) — подтверждено пользователем.
 - [ ] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
 - [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
 - [ ] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные.
@@ -39,5 +48,6 @@ Created 2025-02-28.
 - [ ] Генерировать HTML-отчет (конец дня + по запросу) с метриками/графиками/таймлайном скринов/аномалиями.
 - [ ] Интегрировать AI mock `AIReportAnalyzer` в отчет (логирование payload, мок-ответ).
 - [ ] Полировать UX: главный экран Start/Stop + проект/задача, Today view, Report preview, Settings (конфиг/приватность/retention).
+  - [ ] UI: добавить таймер текущего кванта, суммарное затреканное время и сводку (2025-12-16).
 - [ ] Реализовать sync stub: очередь SyncQueue, упаковка payload кванта (без отправки), удержание скринов/логов до подтверждения.
 - [ ] Packaging/QA: подпись/нотаризация, автозапуск helper-а, sanity-тесты квантов, отчетов, хранения/очистки.
