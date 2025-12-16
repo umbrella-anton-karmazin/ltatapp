@@ -27,6 +27,7 @@ struct QuantumSummary: Equatable {
     let isDropped: Bool
     let endReason: QuantumEndReason
     let systemPauseReason: String?
+    let activity: ActivityAggregate
 }
 
 @MainActor
@@ -39,9 +40,11 @@ final class AppViewModel: ObservableObject {
     @Published var resumePrompt: ResumePrompt?
     @Published var lastQuantum: QuantumSummary?
     @Published var systemPauseReason: String?
+    @Published var lastActivity: ActivityAggregate?
 
     private let logger: AppLogger
     private let systemEvents = SystemEventMonitor()
+    private let activityMonitor = ActivityMonitor()
     private var currentQuantumStartedAt: Date?
     private var quantumTimer: Timer?
 
@@ -61,6 +64,8 @@ final class AppViewModel: ObservableObject {
         status = .tracking
         systemPauseReason = nil
         resumePrompt = nil
+        activityMonitor.resetForNewQuantum()
+        activityMonitor.start()
         startQuantum(at: Date())
         logger.log(level: .info, component: "tracking", message: "Tracking started", metadata: ["project": currentProject, "task": currentTask])
         lastLogMessage = "Tracking started"
@@ -69,6 +74,7 @@ final class AppViewModel: ObservableObject {
     func stopTracking() {
         guard status != .stopped else { return }
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .userStop, systemPauseReason: nil)
+        activityMonitor.stop()
         invalidateTimer()
         status = .stopped
         systemPauseReason = nil
@@ -80,6 +86,7 @@ final class AppViewModel: ObservableObject {
     func pauseBySystem(reason: String) {
         guard status == .tracking else { return }
         finalizeQuantumIfNeeded(endedAt: Date(), endReason: .systemPause, systemPauseReason: reason)
+        activityMonitor.stop()
         invalidateTimer()
         status = .pausedBySystem
         systemPauseReason = reason
@@ -92,6 +99,8 @@ final class AppViewModel: ObservableObject {
         status = .tracking
         systemPauseReason = nil
         resumePrompt = nil
+        activityMonitor.resetForNewQuantum()
+        activityMonitor.start()
         startQuantum(at: Date())
         logger.log(level: .info, component: "tracking", message: "Resumed after system pause")
         lastLogMessage = "Resumed after pause"
@@ -103,6 +112,7 @@ final class AppViewModel: ObservableObject {
 
     private func startQuantum(at date: Date) {
         currentQuantumStartedAt = date
+        activityMonitor.resetForNewQuantum()
         scheduleQuantumTimer()
     }
 
@@ -131,6 +141,9 @@ final class AppViewModel: ObservableObject {
         guard let start = currentQuantumStartedAt else { return }
         currentQuantumStartedAt = nil
 
+        let activity = activityMonitor.computeAggregate(config: config)
+        lastActivity = activity
+
         let measuredDuration = max(0, Int(end.timeIntervalSince(start).rounded()))
         let drop = config.quantum.minPartialSecondsDrop
         let tooShort = config.quantum.minPartialSecondsTooShort
@@ -150,7 +163,8 @@ final class AppViewModel: ObservableObject {
             isTooShort: isTooShort,
             isDropped: isDropped,
             endReason: endReason,
-            systemPauseReason: systemPauseReason
+            systemPauseReason: systemPauseReason,
+            activity: activity
         )
 
         if !isDropped {
@@ -169,7 +183,14 @@ final class AppViewModel: ObservableObject {
                 "is_too_short": String(isTooShort),
                 "is_dropped": String(isDropped),
                 "end_reason": endReason.rawValue,
-                "pause_reason": systemPauseReason ?? ""
+                "pause_reason": systemPauseReason ?? "",
+                "activity_percent": String(activity.activityPercent),
+                "activity_idle": String(activity.isIdle),
+                "activity_low": String(activity.isLowActivity),
+                "activity_k": String(activity.counts.keypressCount),
+                "activity_c": String(activity.counts.clickCount),
+                "activity_s": String(activity.counts.scrollCount),
+                "activity_m": String(Int(activity.counts.mouseDistancePx.rounded()))
             ]
         )
     }

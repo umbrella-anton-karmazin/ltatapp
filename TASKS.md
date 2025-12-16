@@ -41,7 +41,12 @@ Created 2025-02-28.
   - [x] Протянуть всё в `AppViewModel`: один источник правды для `status`, reason, и команды Start/Stop/Resume (2025-12-16) — логика сосредоточена в `AppViewModel` (`mac-app/Sources/LTATApp/AppState.swift`).
   - [x] Логирование переходов и квантов (AuditEvent): state transitions, причины паузы, длительности квантов (2025-12-16) — добавлены quantum logs + transition logs (`mac-app/Sources/LTATApp/AppState.swift`).
   - [x] Smoke: вручную проверить Start→(sleep/screens off)→paused→Resume и partial-пороги (2025-12-16) — подтверждено пользователем.
-- [ ] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги.
+- [~] Реализовать агрегирование активности: сбор counts (keypress/click/scroll/mouse distance), расчет activity_percent по конфигу, idle/low-activity флаги — started 2025-12-16: декомпозиция добавлена.
+  - [x] Определить модель агрегатов активности на квант (counts + activity_percent + idle/low) (2025-12-16) — `ActivityCounts`/`ActivityAggregate` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
+  - [x] Реализовать сбор событий (event tap): keypress/click/scroll + mouse distance (2025-12-16) — `ActivityMonitor` через `CGEvent.tapCreate` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
+  - [x] Реализовать расчет `activity_percent` по конфигу (K_MAX/C_MAX/S_MAX/M_MAX + веса) (2025-12-16) — `computeActivityPercent` (`mac-app/Sources/LTATApp/ActivityMonitor.swift`).
+  - [x] Интегрировать в квантайзер: reset на старт кванта, finalize на end, логирование (2025-12-16) — интеграция в `AppViewModel` + quantum logs (`mac-app/Sources/LTATApp/AppState.swift`).
+  - [ ] Smoke: потыкать ввод, убедиться что counts растут и `activity_percent` меняется (2025-12-16).
 - [ ] Реализовать трекинг фокуса и переключений: frontmost app, bundleId→category, счетчики переключений (квант/час/день), флаги focus_mode/anomaly_switching.
 - [ ] Реализовать захват скриншотов: все дисплеи, даунскейл до 1280px (конфиг), JPEG/HEIC, сохранение на ФС и метаданные.
 - [ ] Привязать хранилище: запись Session/Quantum/ActivityAggregate/FocusAggregate/ScreenshotMetadata/AuditLog, индексы, очистка по политике хранения (неделя пока без синка).
